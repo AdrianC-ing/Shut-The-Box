@@ -10,28 +10,23 @@
       --bg:#0b1220;
       --fg:#eaf0ff;
 
-      /* colores jugadores */
       --p1:#ff4d4d;
       --p2:#4da3ff;
 
-      /* por defecto (se cambia dinámicamente con clases) */
       --accent: var(--p1);
-      --accentSoft: color-mix(in oklab, var(--accent) 20%, transparent);
-      --accentLine: color-mix(in oklab, var(--accent) 55%, transparent);
+      --accentSoft: color-mix(in oklab, var(--accent) 18%, rgba(255,255,255,0.04));
+      --accentSoft2: color-mix(in oklab, var(--accent) 30%, rgba(255,255,255,0.06));
+      --accentLine: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10));
 
       --card: rgba(255,255,255,0.06);
       --cardLine: rgba(255,255,255,0.12);
 
-      --tileTop: rgba(255,255,255,0.10);
-      --tileSide: rgba(255,255,255,0.06);
-      --tileLine: rgba(255,255,255,0.16);
-
       --shadow: 0 10px 30px rgba(0,0,0,.35);
 
       --diceSize: 58px;
-      --tileH: 58px;
-      --tileW: 100%;
-      --thick: 10px;
+
+      --tileH: 66px;
+      --thick: 14px;
       --radius: 16px;
     }
 
@@ -72,8 +67,9 @@
     }
     .pill.active .dot{ background: var(--accent); box-shadow:none; }
 
-    .sum{ font-size: 14px; opacity:.93; }
+    .sum{ font-size: 14px; opacity:.93; line-height: 1.35; }
     .big{ font-size: 16px; font-weight: 900; }
+    .muted{ opacity: .8; }
 
     button{
       touch-action: manipulation;
@@ -115,7 +111,17 @@
       height: var(--diceSize);
       position: relative;
       perspective: 700px;
+      transition: transform 240ms ease, opacity 240ms ease, filter 240ms ease;
+      transform: translate3d(0,0,0);
     }
+
+    /* ✅ modo 1 dado: retirar el dado B (se ve claramente que no participa) */
+    .die3d.retired{
+      transform: translate3d(10px, 16px, -40px) rotateZ(-10deg) scale(0.90);
+      opacity: 0.18;
+      filter: grayscale(1) blur(0.2px);
+    }
+
     .cube{
       width: 100%;
       height: 100%;
@@ -144,6 +150,9 @@
       grid-template-rows: repeat(3, 1fr);
       padding: 10px;
       gap: 6px;
+
+      /* ✅ evita “caras mezcladas / pips fantasma” */
+      backface-visibility: hidden;
     }
     .pip{
       width: 8px; height: 8px;
@@ -155,8 +164,6 @@
       background: rgba(255,255,255,0.92);
       box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(0,0,0,0.25);
     }
-
-    /* posiciones de caras (Z = mitad del tamaño) */
     .z{ transform: translateZ(calc(var(--diceSize)/2)); }
     .nz{ transform: rotateY(180deg) translateZ(calc(var(--diceSize)/2)); }
     .x{ transform: rotateY(90deg) translateZ(calc(var(--diceSize)/2)); }
@@ -164,63 +171,87 @@
     .y{ transform: rotateX(90deg) translateZ(calc(var(--diceSize)/2)); }
     .ny{ transform: rotateX(-90deg) translateZ(calc(var(--diceSize)/2)); }
 
-    /* ===== FICHAS 3D ===== */
+    /* ===== FICHAS 3D (DOMINO) ===== */
     .grid{
       display:grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
       margin-top: 10px;
       perspective: 900px;
     }
+    @media (min-width: 520px){
+      .grid{ grid-template-columns: repeat(3, 1fr); }
+    }
+
     .tile3d{
       height: var(--tileH);
-      width: var(--tileW);
       position: relative;
       transform-style: preserve-3d;
       user-select:none;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       border-radius: var(--radius);
-      transform: translateZ(0);
       transition: transform 90ms ease;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,0.35));
     }
     .tile3d:active{ transform: translateY(1px); }
-
-    .tileTop{
-      position:absolute; inset:0;
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
-      border: 1px solid var(--tileLine);
-      display:flex; align-items:center; justify-content:center;
-      font-weight: 900;
-      font-size: 18px;
-      transform: translateZ(var(--thick));
-      box-shadow: inset 0 8px 18px rgba(255,255,255,0.06), inset 0 -10px 18px rgba(0,0,0,0.28);
-    }
 
     .tileSide{
       position:absolute; inset:0;
       border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(0,0,0,0.20), rgba(255,255,255,0.04));
-      transform: translateZ(0);
-      filter: brightness(.9);
+      background: linear-gradient(180deg, rgba(0,0,0,0.22), rgba(255,255,255,0.04));
       border: 1px solid rgba(255,255,255,0.10);
+      transform: translateZ(0);
+      filter: brightness(.92);
     }
 
-    /* selección (jugador activo) */
-    .tile3d.selected .tileTop{
-      border-color: var(--accentLine);
+    /* todas las fichas se tiñen por turno */
+    .tileTop{
+      position:absolute; inset:0;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--accentSoft2), rgba(255,255,255,0.06));
+      border: 1px solid var(--accentLine);
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 950;
+      font-size: 20px;
+      letter-spacing: 0.2px;
+      transform: translateZ(var(--thick));
       box-shadow:
-        0 0 0 2px var(--accentLine),
-        inset 0 8px 18px rgba(255,255,255,0.06),
-        inset 0 -10px 18px rgba(0,0,0,0.28);
+        inset 0 10px 18px rgba(255,255,255,0.06),
+        inset 0 -10px 18px rgba(0,0,0,0.30);
+    }
+
+    /* labio frontal para espesor */
+    .tileTop::after{
+      content:"";
+      position:absolute;
+      left: 8px; right: 8px;
+      bottom: calc(-1 * var(--thick));
+      height: var(--thick);
+      border-radius: 0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--accent) 35%, rgba(255,255,255,0.10)),
+        rgba(0,0,0,0.40)
+      );
+      border-left: 1px solid rgba(255,255,255,0.10);
+      border-right: 1px solid rgba(255,255,255,0.10);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 10px 16px rgba(0,0,0,0.35);
+      pointer-events: none;
+    }
+
+    .tile3d.selected .tileTop{
+      box-shadow:
+        0 0 0 3px color-mix(in oklab, var(--accent) 65%, transparent),
+        inset 0 10px 18px rgba(255,255,255,0.06),
+        inset 0 -10px 18px rgba(0,0,0,0.30);
       background: linear-gradient(180deg,
-        color-mix(in oklab, var(--accent) 22%, rgba(255,255,255,0.10)),
+        color-mix(in oklab, var(--accent) 42%, rgba(255,255,255,0.08)),
         rgba(255,255,255,0.06)
       );
     }
 
-    /* cerrar: flip hacia abajo */
     .tile3d.closing{
       animation: tileFall 340ms ease-out forwards;
       transform-origin: center bottom;
@@ -231,21 +262,19 @@
       100%{ transform: rotateX(85deg) translateY(10px); }
     }
 
-    /* cerrada: queda “tumbada” y tintada con color del jugador */
     .tile3d.closed{
       pointer-events:none;
       transform: rotateX(85deg) translateY(10px);
-      opacity: .55;
+      opacity: .50;
     }
     .tile3d.closed .tileTop{
       background: linear-gradient(180deg,
-        color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10)),
+        color-mix(in oklab, var(--accent) 45%, rgba(255,255,255,0.08)),
         rgba(255,255,255,0.05)
       );
-      border-color: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.14));
+      border-color: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10));
     }
 
-    /* indicador jugador actual (clase aplicada al body) */
     body.p1 { --accent: var(--p1); }
     body.p2 { --accent: var(--p2); }
 
@@ -275,7 +304,12 @@
 
       <div class="row between">
         <div class="sum">
-          Tirada: <span class="big" id="rollSum">–</span><br/>
+          Dados:
+          <span class="big" id="d1Val">–</span>
+          <span id="d2Sep" class="muted"> + </span>
+          <span class="big" id="d2Val">–</span>
+          <span class="muted"> ⇒ </span>
+          Suma: <span class="big" id="rollSum">–</span><br/>
           Selección: <span class="big" id="selSum">0</span>
         </div>
 
@@ -325,13 +359,17 @@
 <script>
 (() => {
   const N = 10;
-  const WINS_TO_TAKE_MATCH = 2; // mejor de 3
+  const WINS_TO_TAKE_MATCH = 2;
 
   const boardEl = document.getElementById('board');
   const rollSumEl = document.getElementById('rollSum');
   const selSumEl = document.getElementById('selSum');
   const statusMsgEl = document.getElementById('statusMsg');
   const modePillEl = document.getElementById('modePill');
+
+  const d1ValEl = document.getElementById('d1Val');
+  const d2ValEl = document.getElementById('d2Val');
+  const d2SepEl = document.getElementById('d2Sep');
 
   const p1Pill = document.getElementById('p1Pill');
   const p2Pill = document.getElementById('p2Pill');
@@ -364,7 +402,6 @@
     `;
     const cube = el.querySelector('.cube');
     const faces = cube.querySelectorAll('.face');
-    // crear 9 pips por cara (3x3)
     faces.forEach(face=>{
       face.innerHTML = '';
       for(let i=0;i<9;i++){
@@ -373,7 +410,7 @@
         face.appendChild(p);
       }
     });
-    // patrón de pips por valor (índices 0..8)
+
     const patterns = {
       1:[4],
       2:[0,8],
@@ -382,47 +419,44 @@
       5:[0,2,4,6,8],
       6:[0,2,3,5,6,8]
     };
-    // asignar cada cara a un valor fijo (estándar)
-    // front=1, top=2, right=3, left=4, bottom=5, back=6
-    const faceValues = [1,6,3,4,5,2]; // z, nz, x, nx, y, ny
+
+    // z, nz, x, nx, y, ny  (front, back, right, left, bottom, top)
+    const faceValues = [1,6,3,4,5,2];
+
     faces.forEach((face, idx)=>{
       const val = faceValues[idx];
       const on = patterns[val];
       const pips = face.querySelectorAll('.pip');
       on.forEach(i => pips[i].classList.add('on'));
     });
+
     return { el, cube };
   }
 
   const dieA = makeDie(document.getElementById('dieA'));
   const dieB = makeDie(document.getElementById('dieB'));
 
-  // rotaciones para que el valor quede “al frente”
-  // 1: frente, 2: arriba->frente (X 90), 3: derecha->frente (Y -90), 4: izquierda->frente (Y 90), 5: abajo->frente (X -90), 6: atrás->frente (Y 180)
+  // ✅ Rotación correcta para mostrar cada valor en la cara frontal
   const rotForValue = {
     1: { rx: 0,   ry: 0   },
-    2: { rx: 90,  ry: 0   },
+    2: { rx: -90, ry: 0   },
     3: { rx: 0,   ry: -90 },
     4: { rx: 0,   ry: 90  },
-    5: { rx: -90, ry: 0   },
+    5: { rx: 90,  ry: 0   },
     6: { rx: 0,   ry: 180 }
   };
 
   function setDieValue(dieObj, value){
     const r = rotForValue[value];
-    dieObj.cube.style.setProperty('--rx', `${r.rx}deg`);
-    dieObj.cube.style.setProperty('--ry', `${r.ry}deg`);
     dieObj.cube.style.transform = `rotateX(${r.rx}deg) rotateY(${r.ry}deg)`;
   }
 
   function setDiceIdle(diceCount){
-    // si es 1 dado, “aparcamos” el segundo
     if(diceCount === 1){
-      dieB.el.style.opacity = '0.35';
-      dieB.el.style.filter = 'grayscale(1)';
+      // ✅ dado B “retirado” visualmente
+      dieB.el.classList.add('retired');
     }else{
-      dieB.el.style.opacity = '1';
-      dieB.el.style.filter = 'none';
+      dieB.el.classList.remove('retired');
     }
   }
 
@@ -468,7 +502,18 @@
     const openSum = sum(openTiles(st));
     st.diceCount = (openSum <= 6) ? 1 : 2;
     modePillEl.textContent = `Modo: ${st.diceCount} dado${st.diceCount===1?'':'s'}`;
+
     setDiceIdle(st.diceCount);
+
+    // UI D2 visible/oculto según modo
+    if(st.diceCount === 1){
+      d2SepEl.style.visibility = 'hidden';
+      d2ValEl.style.visibility = 'hidden';
+      d2ValEl.textContent = '–';
+    }else{
+      d2SepEl.style.visibility = 'visible';
+      d2ValEl.style.visibility = 'visible';
+    }
   }
 
   function renderBoard(st){
@@ -478,7 +523,6 @@
       t.className = 'tile3d' +
         (st.selected.has(i) ? ' selected' : '') +
         (st.closed.has(i) ? ' closed' : '');
-      t.dataset.value = String(i);
       t.innerHTML = `<div class="tileSide"></div><div class="tileTop">${i}</div>`;
 
       if(!st.closed.has(i) && !roundOver && !st.ended && !matchOver){
@@ -490,15 +534,9 @@
 
   function updateSelectionUI(st){
     const sel = [...st.selected].sort((a,b)=>a-b);
-    const s = sum(sel);
-    selSumEl.textContent = String(s);
+    selSumEl.textContent = String(sum(sel));
 
-    const canConfirm = (
-      st.currentRoll !== null &&
-      s === st.currentRoll &&
-      sel.length > 0 &&
-      !st.ended && !roundOver && !matchOver
-    );
+    const canConfirm = (st.currentRoll !== null && sum(sel) === st.currentRoll && sel.length > 0 && !st.ended && !roundOver && !matchOver);
     confirmBtn.disabled = !canConfirm;
 
     updateStatus(st);
@@ -546,7 +584,7 @@
     const start = performance.now();
 
     const tick = (now) => {
-      // durante el rodado, ponemos valores aleatorios (solo visual)
+      // animación: valores aleatorios solo visuales
       setDieValue(dieA, rollOnce());
       setDieValue(dieB, rollOnce());
 
@@ -557,10 +595,23 @@
         dieB.cube.classList.remove('rolling');
         rolling = false;
 
+        // ✅ valores reales (1..6) que se usan en el juego
         const d1 = rollOnce();
         const d2 = rollOnce();
+
         setDieValue(dieA, d1);
-        if(st.diceCount === 2) setDieValue(dieB, d2);
+        d1ValEl.textContent = String(d1);
+
+        if(st.diceCount === 2){
+          setDieValue(dieB, d2);
+          d2ValEl.textContent = String(d2);
+          d2SepEl.style.visibility = 'visible';
+          d2ValEl.style.visibility = 'visible';
+        }else{
+          d2SepEl.style.visibility = 'hidden';
+          d2ValEl.style.visibility = 'hidden';
+          d2ValEl.textContent = '–';
+        }
 
         st.currentRoll = d1 + (st.diceCount === 2 ? d2 : 0);
         rollSumEl.textContent = String(st.currentRoll);
@@ -592,8 +643,7 @@
     if(st.currentRoll === null) return;
 
     const sel = [...st.selected];
-    const s = sum(sel);
-    if(s !== st.currentRoll) return;
+    if(sum(sel) !== st.currentRoll) return;
 
     animateCloseTiles(sel);
 
@@ -609,6 +659,8 @@
 
       st.currentRoll = null;
       rollSumEl.textContent = '–';
+      d1ValEl.textContent = '–';
+      d2ValEl.textContent = '–';
       updateSelectionUI(st);
       statusMsgEl.textContent = 'Movimiento confirmado. Tira de nuevo.';
     }, 260);
@@ -626,21 +678,19 @@
 
     const open = openTiles(st);
     const openSum = sum(open);
-    const sel = [...st.selected];
-    const selS = sum(sel);
+    const selS = sum([...st.selected]);
 
     if(st.ended){
       statusMsgEl.textContent = `Turno finalizado. Puntuación: ${st.score}.`;
       return;
     }
-
     if(st.currentRoll === null){
       statusMsgEl.textContent = `Fichas abiertas: ${open.join(', ')} (suma ${openSum}).`;
       return;
     }
 
     const diff = st.currentRoll - selS;
-    if(diff === 0 && sel.length > 0) statusMsgEl.textContent = '✅ Suma exacta. Pulsa "Confirmar".';
+    if(diff === 0 && st.selected.size > 0) statusMsgEl.textContent = '✅ Suma exacta. Pulsa "Confirmar".';
     else if(diff > 0) statusMsgEl.textContent = `Selecciona fichas que sumen ${st.currentRoll} (te faltan ${diff}).`;
     else statusMsgEl.textContent = `Te has pasado por ${Math.abs(diff)}. Ajusta la selección.`;
   }
@@ -651,6 +701,8 @@
     st.selected.clear();
     rollSumEl.textContent = '–';
     selSumEl.textContent = '0';
+    d1ValEl.textContent = '–';
+    d2ValEl.textContent = '–';
 
     st.score = sum(openTiles(st));
     if(turn === 1) p1RoundScoreEl.textContent = st.score;
@@ -732,6 +784,8 @@
     st.selected.clear();
     rollSumEl.textContent = '–';
     selSumEl.textContent = '0';
+    d1ValEl.textContent = '–';
+    d2ValEl.textContent = '–';
 
     rollBtn.disabled = roundOver || st.ended || matchOver;
     clearBtn.disabled = roundOver || st.ended || matchOver;
@@ -778,8 +832,11 @@
   // init
   setDieValue(dieA, 1);
   setDieValue(dieB, 6);
+  d1ValEl.textContent = '–';
+  d2ValEl.textContent = '–';
   newMatch();
 })();
 </script>
 </body>
 </html>
+
