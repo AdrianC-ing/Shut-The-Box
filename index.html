@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shut the Box 3D Bo3 (1–10)</title>
+  <title>Shut the Box 3D Bo3 (1–10) · v1.4</title>
   <style>
     :root{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -20,19 +20,20 @@
 
       --card: rgba(255,255,255,0.06);
       --cardLine: rgba(255,255,255,0.12);
-
       --shadow: 0 10px 30px rgba(0,0,0,.35);
 
       --diceSize: 58px;
 
-      --tileH: 66px;
-      --thick: 14px;
+      /* Fichas tipo dominó */
+      --tileH: 62px;
+      --thick: 16px;
       --radius: 16px;
     }
 
     body{ margin:0; background:var(--bg); color:var(--fg); }
     .app{ max-width: 600px; margin:0 auto; padding:16px; }
-    h1{ font-size: 20px; margin: 8px 0 12px; font-weight: 900; }
+    h1{ font-size: 20px; margin: 8px 0 12px; font-weight: 900; display:flex; align-items:baseline; gap:10px; }
+    .ver{ font-size:12px; opacity:.7; font-weight:800; padding:3px 8px; border:1px solid rgba(255,255,255,.18); border-radius:999px; }
 
     .card{
       background:var(--card);
@@ -114,10 +115,9 @@
       transition: transform 240ms ease, opacity 240ms ease, filter 240ms ease;
       transform: translate3d(0,0,0);
     }
-
-    /* ✅ modo 1 dado: retirar el dado B (se ve claramente que no participa) */
+    /* Modo 1 dado: retirar el dado B */
     .die3d.retired{
-      transform: translate3d(10px, 16px, -40px) rotateZ(-10deg) scale(0.90);
+      transform: translate3d(14px, 18px, -60px) rotateZ(-12deg) scale(0.90);
       opacity: 0.18;
       filter: grayscale(1) blur(0.2px);
     }
@@ -127,8 +127,8 @@
       height: 100%;
       position:absolute;
       transform-style: preserve-3d;
-      transform: rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
-      transition: transform 650ms cubic-bezier(.2,.9,.2,1);
+      transform: rotateX(0deg) rotateY(0deg);
+      transition: transform 520ms cubic-bezier(.2,.9,.2,1);
     }
     .cube.rolling{
       animation: spin 650ms linear infinite;
@@ -138,6 +138,7 @@
       0% { transform: rotateX(0deg) rotateY(0deg); }
       100% { transform: rotateX(360deg) rotateY(360deg); }
     }
+
     .face{
       position:absolute;
       inset:0;
@@ -151,7 +152,7 @@
       padding: 10px;
       gap: 6px;
 
-      /* ✅ evita “caras mezcladas / pips fantasma” */
+      /* CLAVE: evita “pips fantasma” */
       backface-visibility: hidden;
     }
     .pip{
@@ -164,22 +165,28 @@
       background: rgba(255,255,255,0.92);
       box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(0,0,0,0.25);
     }
-    .z{ transform: translateZ(calc(var(--diceSize)/2)); }
-    .nz{ transform: rotateY(180deg) translateZ(calc(var(--diceSize)/2)); }
-    .x{ transform: rotateY(90deg) translateZ(calc(var(--diceSize)/2)); }
-    .nx{ transform: rotateY(-90deg) translateZ(calc(var(--diceSize)/2)); }
-    .y{ transform: rotateX(90deg) translateZ(calc(var(--diceSize)/2)); }
-    .ny{ transform: rotateX(-90deg) translateZ(calc(var(--diceSize)/2)); }
+
+    .z  { transform: translateZ(calc(var(--diceSize)/2)); }
+    .nz { transform: rotateY(180deg) translateZ(calc(var(--diceSize)/2)); }
+    .x  { transform: rotateY(90deg) translateZ(calc(var(--diceSize)/2)); }
+    .nx { transform: rotateY(-90deg) translateZ(calc(var(--diceSize)/2)); }
+    .y  { transform: rotateX(90deg) translateZ(calc(var(--diceSize)/2)); }
+    .ny { transform: rotateX(-90deg) translateZ(calc(var(--diceSize)/2)); }
 
     /* ===== FICHAS 3D (DOMINO) ===== */
     .grid{
       display:grid;
-      grid-template-columns: repeat(2, 1fr);
       gap: 12px;
       margin-top: 10px;
       perspective: 900px;
+
+      /* MUY ALARGADAS EN MÓVIL */
+      grid-template-columns: 1fr;
     }
     @media (min-width: 520px){
+      .grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 720px){
       .grid{ grid-template-columns: repeat(3, 1fr); }
     }
 
@@ -192,20 +199,20 @@
       -webkit-tap-highlight-color: transparent;
       border-radius: var(--radius);
       transition: transform 90ms ease;
-      filter: drop-shadow(0 10px 14px rgba(0,0,0,0.35));
+      filter: drop-shadow(0 12px 16px rgba(0,0,0,0.38));
     }
     .tile3d:active{ transform: translateY(1px); }
 
     .tileSide{
       position:absolute; inset:0;
       border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(0,0,0,0.22), rgba(255,255,255,0.04));
+      background: linear-gradient(180deg, rgba(0,0,0,0.26), rgba(255,255,255,0.04));
       border: 1px solid rgba(255,255,255,0.10);
       transform: translateZ(0);
       filter: brightness(.92);
     }
 
-    /* todas las fichas se tiñen por turno */
+    /* Todas las fichas se tiñen por turno */
     .tileTop{
       position:absolute; inset:0;
       border-radius: var(--radius);
@@ -213,31 +220,31 @@
       border: 1px solid var(--accentLine);
       display:flex; align-items:center; justify-content:center;
       font-weight: 950;
-      font-size: 20px;
+      font-size: 22px;
       letter-spacing: 0.2px;
       transform: translateZ(var(--thick));
       box-shadow:
         inset 0 10px 18px rgba(255,255,255,0.06),
-        inset 0 -10px 18px rgba(0,0,0,0.30);
+        inset 0 -12px 18px rgba(0,0,0,0.32);
     }
 
-    /* labio frontal para espesor */
+    /* Labio frontal para espesor (dominó) */
     .tileTop::after{
       content:"";
       position:absolute;
-      left: 8px; right: 8px;
+      left: 10px; right: 10px;
       bottom: calc(-1 * var(--thick));
       height: var(--thick);
       border-radius: 0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);
       background: linear-gradient(
         180deg,
-        color-mix(in oklab, var(--accent) 35%, rgba(255,255,255,0.10)),
-        rgba(0,0,0,0.40)
+        color-mix(in oklab, var(--accent) 38%, rgba(255,255,255,0.10)),
+        rgba(0,0,0,0.45)
       );
-      border-left: 1px solid rgba(255,255,255,0.10);
-      border-right: 1px solid rgba(255,255,255,0.10);
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-      box-shadow: 0 10px 16px rgba(0,0,0,0.35);
+      border-left: 1px solid rgba(255,255,255,0.12);
+      border-right: 1px solid rgba(255,255,255,0.12);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 12px 18px rgba(0,0,0,0.40);
       pointer-events: none;
     }
 
@@ -245,9 +252,9 @@
       box-shadow:
         0 0 0 3px color-mix(in oklab, var(--accent) 65%, transparent),
         inset 0 10px 18px rgba(255,255,255,0.06),
-        inset 0 -10px 18px rgba(0,0,0,0.30);
+        inset 0 -12px 18px rgba(0,0,0,0.32);
       background: linear-gradient(180deg,
-        color-mix(in oklab, var(--accent) 42%, rgba(255,255,255,0.08)),
+        color-mix(in oklab, var(--accent) 46%, rgba(255,255,255,0.08)),
         rgba(255,255,255,0.06)
       );
     }
@@ -267,13 +274,6 @@
       transform: rotateX(85deg) translateY(10px);
       opacity: .50;
     }
-    .tile3d.closed .tileTop{
-      background: linear-gradient(180deg,
-        color-mix(in oklab, var(--accent) 45%, rgba(255,255,255,0.08)),
-        rgba(255,255,255,0.05)
-      );
-      border-color: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10));
-    }
 
     body.p1 { --accent: var(--p1); }
     body.p2 { --accent: var(--p2); }
@@ -284,7 +284,7 @@
 
 <body class="p1">
   <div class="app">
-    <h1>Shut the Box 3D (1–10) · 2 jugadores · Mejor de 3</h1>
+    <h1>Shut the Box 3D (1–10) · 2 jugadores · Bo3 <span class="ver">v1.4</span></h1>
 
     <div class="card">
       <div class="row between">
@@ -388,79 +388,72 @@
   const p2WinsEl = document.getElementById('p2Wins');
   const matchWinnerEl = document.getElementById('matchWinner');
 
-  /* ====== DADO 3D ====== */
+  /* ===== DADO 3D: pintamos SIEMPRE el valor real en la cara frontal ===== */
+  const pipPattern = {
+    1:[4],
+    2:[0,8],
+    3:[0,4,8],
+    4:[0,2,6,8],
+    5:[0,2,4,6,8],
+    6:[0,2,3,5,6,8]
+  };
+
+  function buildFace(){
+    const face = document.createElement('div');
+    face.className = 'face';
+    for(let i=0;i<9;i++){
+      const p = document.createElement('div');
+      p.className = 'pip';
+      face.appendChild(p);
+    }
+    return face;
+  }
+
   function makeDie(el){
-    el.innerHTML = `
-      <div class="cube" style="--rx:0deg;--ry:0deg">
-        <div class="face z"></div>
-        <div class="face nz"></div>
-        <div class="face x"></div>
-        <div class="face nx"></div>
-        <div class="face y"></div>
-        <div class="face ny"></div>
-      </div>
-    `;
-    const cube = el.querySelector('.cube');
-    const faces = cube.querySelectorAll('.face');
-    faces.forEach(face=>{
-      face.innerHTML = '';
-      for(let i=0;i<9;i++){
-        const p = document.createElement('div');
-        p.className = 'pip';
-        face.appendChild(p);
-      }
-    });
+    const cube = document.createElement('div');
+    cube.className = 'cube';
 
-    const patterns = {
-      1:[4],
-      2:[0,8],
-      3:[0,4,8],
-      4:[0,2,6,8],
-      5:[0,2,4,6,8],
-      6:[0,2,3,5,6,8]
-    };
+    const faceZ  = buildFace(); faceZ.classList.add('z');
+    const faceNZ = buildFace(); faceNZ.classList.add('nz');
+    const faceX  = buildFace(); faceX.classList.add('x');
+    const faceNX = buildFace(); faceNX.classList.add('nx');
+    const faceY  = buildFace(); faceY.classList.add('y');
+    const faceNY = buildFace(); faceNY.classList.add('ny');
 
-    // z, nz, x, nx, y, ny  (front, back, right, left, bottom, top)
-    const faceValues = [1,6,3,4,5,2];
+    cube.append(faceZ, faceNZ, faceX, faceNX, faceY, faceNY);
+    el.innerHTML = '';
+    el.appendChild(cube);
 
-    faces.forEach((face, idx)=>{
-      const val = faceValues[idx];
-      const on = patterns[val];
-      const pips = face.querySelectorAll('.pip');
-      on.forEach(i => pips[i].classList.add('on'));
-    });
+    const faces = { z: faceZ, nz: faceNZ, x: faceX, nx: faceNX, y: faceY, ny: faceNY };
 
-    return { el, cube };
+    function paint(faceEl, value){
+      const pips = faceEl.querySelectorAll('.pip');
+      pips.forEach(p => p.classList.remove('on'));
+      for(const idx of pipPattern[value]) pips[idx].classList.add('on');
+    }
+
+    function paintFront(value){
+      // Pintamos SOLO la cara frontal con el valor real (cero ambigüedad)
+      paint(faces.z, value);
+      // Las demás las dejamos en “neutro” (vacías) para evitar lecturas raras
+      // (si prefieres, luego podemos poner un dado “realista” completo)
+      [faces.nz, faces.x, faces.nx, faces.y, faces.ny].forEach(f=>{
+        const pips = f.querySelectorAll('.pip');
+        pips.forEach(p => p.classList.remove('on'));
+      });
+    }
+
+    return { el, cube, paintFront };
   }
 
   const dieA = makeDie(document.getElementById('dieA'));
   const dieB = makeDie(document.getElementById('dieB'));
 
-  // ✅ Rotación correcta para mostrar cada valor en la cara frontal
-  const rotForValue = {
-    1: { rx: 0,   ry: 0   },
-    2: { rx: -90, ry: 0   },
-    3: { rx: 0,   ry: -90 },
-    4: { rx: 0,   ry: 90  },
-    5: { rx: 90,  ry: 0   },
-    6: { rx: 0,   ry: 180 }
-  };
-
-  function setDieValue(dieObj, value){
-    const r = rotForValue[value];
-    dieObj.cube.style.transform = `rotateX(${r.rx}deg) rotateY(${r.ry}deg)`;
-  }
-
   function setDiceIdle(diceCount){
-    if(diceCount === 1){
-      // ✅ dado B “retirado” visualmente
-      dieB.el.classList.add('retired');
-    }else{
-      dieB.el.classList.remove('retired');
-    }
+    if(diceCount === 1) dieB.el.classList.add('retired');
+    else dieB.el.classList.remove('retired');
   }
 
-  /* ====== GAME STATE ====== */
   function freshTurnState(){
     return {
       closed: new Set(),
@@ -490,12 +483,8 @@
   function setActivePlayerUI(){
     document.body.classList.toggle('p1', turn === 1);
     document.body.classList.toggle('p2', turn === 2);
-
-    if(turn === 1){
-      p1Pill.classList.add('active'); p2Pill.classList.remove('active');
-    }else{
-      p2Pill.classList.add('active'); p1Pill.classList.remove('active');
-    }
+    if(turn === 1){ p1Pill.classList.add('active'); p2Pill.classList.remove('active'); }
+    else{ p2Pill.classList.add('active'); p1Pill.classList.remove('active'); }
   }
 
   function updateDiceMode(st){
@@ -505,7 +494,6 @@
 
     setDiceIdle(st.diceCount);
 
-    // UI D2 visible/oculto según modo
     if(st.diceCount === 1){
       d2SepEl.style.visibility = 'hidden';
       d2ValEl.style.visibility = 'hidden';
@@ -520,11 +508,8 @@
     boardEl.innerHTML = '';
     for(let i=1;i<=N;i++){
       const t = document.createElement('div');
-      t.className = 'tile3d' +
-        (st.selected.has(i) ? ' selected' : '') +
-        (st.closed.has(i) ? ' closed' : '');
+      t.className = 'tile3d' + (st.selected.has(i) ? ' selected' : '') + (st.closed.has(i) ? ' closed' : '');
       t.innerHTML = `<div class="tileSide"></div><div class="tileTop">${i}</div>`;
-
       if(!st.closed.has(i) && !roundOver && !st.ended && !matchOver){
         t.addEventListener('click', ()=>toggleSelect(i));
       }
@@ -536,7 +521,12 @@
     const sel = [...st.selected].sort((a,b)=>a-b);
     selSumEl.textContent = String(sum(sel));
 
-    const canConfirm = (st.currentRoll !== null && sum(sel) === st.currentRoll && sel.length > 0 && !st.ended && !roundOver && !matchOver);
+    const canConfirm = (
+      st.currentRoll !== null &&
+      sum(sel) === st.currentRoll &&
+      sel.length > 0 &&
+      !st.ended && !roundOver && !matchOver
+    );
     confirmBtn.disabled = !canConfirm;
 
     updateStatus(st);
@@ -584,9 +574,9 @@
     const start = performance.now();
 
     const tick = (now) => {
-      // animación: valores aleatorios solo visuales
-      setDieValue(dieA, rollOnce());
-      setDieValue(dieB, rollOnce());
+      // durante la animación, pintamos aleatorio en la cara frontal (visual)
+      dieA.paintFront(rollOnce());
+      dieB.paintFront(rollOnce());
 
       if(now - start < duration){
         requestAnimationFrame(tick);
@@ -595,15 +585,16 @@
         dieB.cube.classList.remove('rolling');
         rolling = false;
 
-        // ✅ valores reales (1..6) que se usan en el juego
+        // ✅ valores reales 1..6
         const d1 = rollOnce();
         const d2 = rollOnce();
 
-        setDieValue(dieA, d1);
+        // ✅ el dado muestra EXACTAMENTE ese valor (cara frontal)
+        dieA.paintFront(d1);
         d1ValEl.textContent = String(d1);
 
         if(st.diceCount === 2){
-          setDieValue(dieB, d2);
+          dieB.paintFront(d2);
           d2ValEl.textContent = String(d2);
           d2SepEl.style.visibility = 'visible';
           d2ValEl.style.visibility = 'visible';
@@ -742,15 +733,9 @@
     clearBtn.disabled = true;
 
     const rw = computeRoundWinner();
-    if(rw === 1){
-      wins[1] += 1;
-      roundWinnerEl.textContent = 'Jugador 1';
-    }else if(rw === 2){
-      wins[2] += 1;
-      roundWinnerEl.textContent = 'Jugador 2';
-    }else{
-      roundWinnerEl.textContent = 'Empate';
-    }
+    if(rw === 1){ wins[1] += 1; roundWinnerEl.textContent = 'Jugador 1'; }
+    else if(rw === 2){ wins[2] += 1; roundWinnerEl.textContent = 'Jugador 2'; }
+    else{ roundWinnerEl.textContent = 'Empate'; }
 
     p1WinsEl.textContent = wins[1];
     p2WinsEl.textContent = wins[2];
@@ -830,8 +815,8 @@
   newBtn.addEventListener('click', newMatch);
 
   // init
-  setDieValue(dieA, 1);
-  setDieValue(dieB, 6);
+  dieA.paintFront(1);
+  dieB.paintFront(6);
   d1ValEl.textContent = '–';
   d2ValEl.textContent = '–';
   newMatch();
@@ -839,4 +824,3 @@
 </script>
 </body>
 </html>
-
