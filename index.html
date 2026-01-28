@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shut the Box 3D Bo3 (1–10) · v1.4</title>
+  <title>Shut the Box 3D Bo3 (1–10) · v1.5</title>
   <style>
     :root{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -24,9 +24,10 @@
 
       --diceSize: 58px;
 
-      /* Fichas tipo dominó */
-      --tileH: 62px;
-      --thick: 16px;
+      /* Fichas tipo dominó: VERTICALES */
+      --tileW: 64px;   /* más estrecha */
+      --tileH: 108px;  /* más alta */
+      --thick: 18px;   /* más grosor */
       --radius: 16px;
     }
 
@@ -115,7 +116,6 @@
       transition: transform 240ms ease, opacity 240ms ease, filter 240ms ease;
       transform: translate3d(0,0,0);
     }
-    /* Modo 1 dado: retirar el dado B */
     .die3d.retired{
       transform: translate3d(14px, 18px, -60px) rotateZ(-12deg) scale(0.90);
       opacity: 0.18;
@@ -151,8 +151,6 @@
       grid-template-rows: repeat(3, 1fr);
       padding: 10px;
       gap: 6px;
-
-      /* CLAVE: evita “pips fantasma” */
       backface-visibility: hidden;
     }
     .pip{
@@ -173,24 +171,24 @@
     .y  { transform: rotateX(90deg) translateZ(calc(var(--diceSize)/2)); }
     .ny { transform: rotateX(-90deg) translateZ(calc(var(--diceSize)/2)); }
 
-    /* ===== FICHAS 3D (DOMINO) ===== */
+    /* ===== FICHAS 3D VERTICALES ===== */
     .grid{
       display:grid;
       gap: 12px;
       margin-top: 10px;
-      perspective: 900px;
-
-      /* MUY ALARGADAS EN MÓVIL */
-      grid-template-columns: 1fr;
+      perspective: 1000px;
+      grid-template-columns: repeat(4, var(--tileW));
+      justify-content: center;
     }
     @media (min-width: 520px){
-      .grid{ grid-template-columns: repeat(2, 1fr); }
+      .grid{ grid-template-columns: repeat(5, var(--tileW)); }
     }
     @media (min-width: 720px){
-      .grid{ grid-template-columns: repeat(3, 1fr); }
+      .grid{ grid-template-columns: repeat(10, var(--tileW)); }
     }
 
     .tile3d{
+      width: var(--tileW);
       height: var(--tileH);
       position: relative;
       transform-style: preserve-3d;
@@ -198,21 +196,25 @@
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       border-radius: var(--radius);
-      transition: transform 90ms ease;
-      filter: drop-shadow(0 12px 16px rgba(0,0,0,0.38));
+      transition: transform 120ms ease, filter 120ms ease;
+      filter: drop-shadow(0 14px 20px rgba(0,0,0,0.42));
     }
     .tile3d:active{ transform: translateY(1px); }
 
-    .tileSide{
+    /* “cuerpo” base */
+    .tileBody{
       position:absolute; inset:0;
       border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(0,0,0,0.26), rgba(255,255,255,0.04));
+      background: linear-gradient(180deg, rgba(0,0,0,0.28), rgba(255,255,255,0.04));
       border: 1px solid rgba(255,255,255,0.10);
       transform: translateZ(0);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 -1px 0 rgba(0,0,0,0.30);
       filter: brightness(.92);
     }
 
-    /* Todas las fichas se tiñen por turno */
+    /* cara superior */
     .tileTop{
       position:absolute; inset:0;
       border-radius: var(--radius);
@@ -220,47 +222,87 @@
       border: 1px solid var(--accentLine);
       display:flex; align-items:center; justify-content:center;
       font-weight: 950;
-      font-size: 22px;
+      font-size: 24px;
       letter-spacing: 0.2px;
       transform: translateZ(var(--thick));
       box-shadow:
-        inset 0 10px 18px rgba(255,255,255,0.06),
-        inset 0 -12px 18px rgba(0,0,0,0.32);
+        inset 0 12px 22px rgba(255,255,255,0.07),
+        inset 0 -16px 22px rgba(0,0,0,0.34);
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Labio frontal para espesor (dominó) */
-    .tileTop::after{
+    /* brillo diagonal estilo “resina” */
+    .tileTop::before{
       content:"";
       position:absolute;
-      left: 10px; right: 10px;
+      inset:-30%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02), rgba(255,255,255,0));
+      transform: translateX(-35%) rotate(8deg);
+      opacity: .55;
+      pointer-events:none;
+    }
+
+    /* LATERALES: más 3D realista (izq y der) */
+    .tileSideL, .tileSideR{
+      position:absolute;
+      top: 6px;
+      bottom: 6px;
+      width: calc(var(--thick));
+      border-radius: 12px;
+      transform-origin: center;
+      background: linear-gradient(180deg,
+        color-mix(in oklab, var(--accent) 20%, rgba(0,0,0,0.60)),
+        rgba(0,0,0,0.55)
+      );
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+      pointer-events:none;
+    }
+    .tileSideL{
+      left: 6px;
+      transform: rotateY(90deg) translateZ(calc(var(--tileW)/2 - 1px));
+      filter: brightness(.85);
+    }
+    .tileSideR{
+      right: 6px;
+      transform: rotateY(-90deg) translateZ(calc(var(--tileW)/2 - 1px));
+      filter: brightness(.78);
+    }
+
+    /* “frontal” de espesor (parte de abajo) */
+    .tileFront{
+      position:absolute;
+      left: 6px; right: 6px;
       bottom: calc(-1 * var(--thick));
       height: var(--thick);
       border-radius: 0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);
       background: linear-gradient(
         180deg,
-        color-mix(in oklab, var(--accent) 38%, rgba(255,255,255,0.10)),
-        rgba(0,0,0,0.45)
+        color-mix(in oklab, var(--accent) 40%, rgba(255,255,255,0.10)),
+        rgba(0,0,0,0.50)
       );
       border-left: 1px solid rgba(255,255,255,0.12);
       border-right: 1px solid rgba(255,255,255,0.12);
       border-bottom: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 12px 18px rgba(0,0,0,0.40);
-      pointer-events: none;
+      box-shadow: 0 14px 20px rgba(0,0,0,0.45);
+      transform: translateZ(calc(var(--thick) - 1px));
+      pointer-events:none;
     }
 
     .tile3d.selected .tileTop{
       box-shadow:
         0 0 0 3px color-mix(in oklab, var(--accent) 65%, transparent),
-        inset 0 10px 18px rgba(255,255,255,0.06),
-        inset 0 -12px 18px rgba(0,0,0,0.32);
+        inset 0 12px 22px rgba(255,255,255,0.07),
+        inset 0 -16px 22px rgba(0,0,0,0.34);
       background: linear-gradient(180deg,
-        color-mix(in oklab, var(--accent) 46%, rgba(255,255,255,0.08)),
+        color-mix(in oklab, var(--accent) 52%, rgba(255,255,255,0.10)),
         rgba(255,255,255,0.06)
       );
     }
 
     .tile3d.closing{
-      animation: tileFall 340ms ease-out forwards;
+      animation: tileFall 360ms ease-out forwards;
       transform-origin: center bottom;
     }
     @keyframes tileFall{
@@ -272,7 +314,7 @@
     .tile3d.closed{
       pointer-events:none;
       transform: rotateX(85deg) translateY(10px);
-      opacity: .50;
+      opacity: .55;
     }
 
     body.p1 { --accent: var(--p1); }
@@ -284,7 +326,7 @@
 
 <body class="p1">
   <div class="app">
-    <h1>Shut the Box 3D (1–10) · 2 jugadores · Bo3 <span class="ver">v1.4</span></h1>
+    <h1>Shut the Box 3D (1–10) · 2 jugadores · Bo3 <span class="ver">v1.5</span></h1>
 
     <div class="card">
       <div class="row between">
@@ -388,7 +430,7 @@
   const p2WinsEl = document.getElementById('p2Wins');
   const matchWinnerEl = document.getElementById('matchWinner');
 
-  /* ===== DADO 3D: pintamos SIEMPRE el valor real en la cara frontal ===== */
+  /* ===== DADO 3D: cara frontal SIEMPRE = valor real ===== */
   const pipPattern = {
     1:[4],
     2:[0,8],
@@ -398,9 +440,9 @@
     6:[0,2,3,5,6,8]
   };
 
-  function buildFace(){
+  function buildFace(extraClass){
     const face = document.createElement('div');
-    face.className = 'face';
+    face.className = `face ${extraClass}`;
     for(let i=0;i<9;i++){
       const p = document.createElement('div');
       p.className = 'pip';
@@ -413,18 +455,18 @@
     const cube = document.createElement('div');
     cube.className = 'cube';
 
-    const faceZ  = buildFace(); faceZ.classList.add('z');
-    const faceNZ = buildFace(); faceNZ.classList.add('nz');
-    const faceX  = buildFace(); faceX.classList.add('x');
-    const faceNX = buildFace(); faceNX.classList.add('nx');
-    const faceY  = buildFace(); faceY.classList.add('y');
-    const faceNY = buildFace(); faceNY.classList.add('ny');
+    const faces = {
+      z:  buildFace('z'),
+      nz: buildFace('nz'),
+      x:  buildFace('x'),
+      nx: buildFace('nx'),
+      y:  buildFace('y'),
+      ny: buildFace('ny')
+    };
 
-    cube.append(faceZ, faceNZ, faceX, faceNX, faceY, faceNY);
+    cube.append(faces.z, faces.nz, faces.x, faces.nx, faces.y, faces.ny);
     el.innerHTML = '';
     el.appendChild(cube);
-
-    const faces = { z: faceZ, nz: faceNZ, x: faceX, nx: faceNX, y: faceY, ny: faceNY };
 
     function paint(faceEl, value){
       const pips = faceEl.querySelectorAll('.pip');
@@ -433,10 +475,8 @@
     }
 
     function paintFront(value){
-      // Pintamos SOLO la cara frontal con el valor real (cero ambigüedad)
       paint(faces.z, value);
-      // Las demás las dejamos en “neutro” (vacías) para evitar lecturas raras
-      // (si prefieres, luego podemos poner un dado “realista” completo)
+      // resto vacío para no “leer” valores raros desde ángulos
       [faces.nz, faces.x, faces.nx, faces.y, faces.ny].forEach(f=>{
         const pips = f.querySelectorAll('.pip');
         pips.forEach(p => p.classList.remove('on'));
@@ -491,7 +531,6 @@
     const openSum = sum(openTiles(st));
     st.diceCount = (openSum <= 6) ? 1 : 2;
     modePillEl.textContent = `Modo: ${st.diceCount} dado${st.diceCount===1?'':'s'}`;
-
     setDiceIdle(st.diceCount);
 
     if(st.diceCount === 1){
@@ -509,7 +548,13 @@
     for(let i=1;i<=N;i++){
       const t = document.createElement('div');
       t.className = 'tile3d' + (st.selected.has(i) ? ' selected' : '') + (st.closed.has(i) ? ' closed' : '');
-      t.innerHTML = `<div class="tileSide"></div><div class="tileTop">${i}</div>`;
+      t.innerHTML = `
+        <div class="tileBody"></div>
+        <div class="tileSideL"></div>
+        <div class="tileSideR"></div>
+        <div class="tileFront"></div>
+        <div class="tileTop">${i}</div>
+      `;
       if(!st.closed.has(i) && !roundOver && !st.ended && !matchOver){
         t.addEventListener('click', ()=>toggleSelect(i));
       }
@@ -520,13 +565,7 @@
   function updateSelectionUI(st){
     const sel = [...st.selected].sort((a,b)=>a-b);
     selSumEl.textContent = String(sum(sel));
-
-    const canConfirm = (
-      st.currentRoll !== null &&
-      sum(sel) === st.currentRoll &&
-      sel.length > 0 &&
-      !st.ended && !roundOver && !matchOver
-    );
+    const canConfirm = (st.currentRoll !== null && sum(sel) === st.currentRoll && sel.length > 0 && !st.ended && !roundOver && !matchOver);
     confirmBtn.disabled = !canConfirm;
 
     updateStatus(st);
@@ -574,7 +613,6 @@
     const start = performance.now();
 
     const tick = (now) => {
-      // durante la animación, pintamos aleatorio en la cara frontal (visual)
       dieA.paintFront(rollOnce());
       dieB.paintFront(rollOnce());
 
@@ -585,11 +623,9 @@
         dieB.cube.classList.remove('rolling');
         rolling = false;
 
-        // ✅ valores reales 1..6
         const d1 = rollOnce();
         const d2 = rollOnce();
 
-        // ✅ el dado muestra EXACTAMENTE ese valor (cara frontal)
         dieA.paintFront(d1);
         d1ValEl.textContent = String(d1);
 
@@ -615,7 +651,6 @@
         }
       }
     };
-
     requestAnimationFrame(tick);
   }
 
