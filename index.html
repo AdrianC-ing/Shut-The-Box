@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shut the Box 3D Bo3 (1–10) · v1.9</title>
+  <title>Shut the Box 3D Bo3 (1–10) · v2.0</title>
 
   <style>
     :root{
@@ -205,7 +205,16 @@
     }
     .tile3d:active{ transform: translateY(1px); }
 
+    /* Contenedor (deja ver bordes que "salen") */
     .tileCard{
+      position:absolute;
+      inset:0;
+      border-radius: var(--radius);
+      overflow: visible;
+    }
+
+    /* Cara frontal REAL: aquí recortamos el brillo */
+    .tileFace{
       position:absolute;
       inset:0;
       border-radius: var(--radius);
@@ -214,18 +223,21 @@
       box-shadow:
         inset 0 14px 26px rgba(255,255,255,0.08),
         inset 0 -18px 26px rgba(0,0,0,0.38);
-      overflow: visible;
+      overflow: hidden; /* CLAVE: evita sombras raras fuera */
     }
 
-    .tileCard::after{
-      content:"";
+    /* Brillo contenido (no se sale de la ficha) */
+    .tileGloss{
       position:absolute;
-      inset:-45%;
-      background: linear-gradient(120deg, rgba(255,255,255,0.22), rgba(255,255,255,0.05), rgba(255,255,255,0));
-      transform: translateX(-28%) rotate(10deg);
+      inset:-10% -30%;
+      background: linear-gradient(120deg,
+        rgba(255,255,255,0.18),
+        rgba(255,255,255,0.06),
+        rgba(255,255,255,0)
+      );
+      transform: translateX(-18%) rotate(10deg);
       opacity: .55;
       pointer-events:none;
-      border-radius: 999px;
     }
 
     .tileBevel{
@@ -292,7 +304,7 @@
       z-index: 2;
     }
 
-    .tile3d.selected .tileCard{
+    .tile3d.selected .tileFace{
       box-shadow:
         0 0 0 3px rgba(255,255,255,0.12),
         0 0 0 5px var(--accentLine),
@@ -316,7 +328,7 @@
       opacity: .55;
     }
 
-    /* === IMPORTANTE: aquí se cambian TODAS las variables del tema por jugador === */
+    /* === Tema por jugador (robusto) === */
     body.p1{
       --accent: var(--p1);
       --accentSoft: rgba(255,77,77,0.18);
@@ -336,7 +348,7 @@
 
 <body class="p1">
   <div class="app">
-    <h1>Shut the Box 3D (1–10) · 2 jugadores · Bo3 <span class="ver">v1.9</span></h1>
+    <h1>Shut the Box 3D (1–10) · 2 jugadores · Bo3 <span class="ver">v2.0</span></h1>
 
     <div class="card">
       <div class="row between">
@@ -560,8 +572,11 @@
 
       t.innerHTML = `
         <div class="tileCard">
-          <div class="tileBevel"></div>
-          <div class="tileNum">${i}</div>
+          <div class="tileFace">
+            <div class="tileGloss"></div>
+            <div class="tileBevel"></div>
+            <div class="tileNum">${i}</div>
+          </div>
           <div class="tileEdgeRight"></div>
           <div class="tileEdgeBottom"></div>
         </div>
