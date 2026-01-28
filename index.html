@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shut the Box 3D Bo3 (1–10)</title>
+  <style>
+    :root{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      --bg:#0b1220;
+      --fg:#eaf0ff;
+
+      /* colores jugadores */
+      --p1:#ff4d4d;
+      --p2:#4da3ff;
+
+      /* por defecto (se cambia dinámicamente con clases) */
+      --accent: var(--p1);
+      --accentSoft: color-mix(in oklab, var(--accent) 20%, transparent);
+      --accentLine: color-mix(in oklab, var(--accent) 55%, transparent);
+
+      --card: rgba(255,255,255,0.06);
+      --cardLine: rgba(255,255,255,0.12);
+
+      --tileTop: rgba(255,255,255,0.10);
+      --tileSide: rgba(255,255,255,0.06);
+      --tileLine: rgba(255,255,255,0.16);
+
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+
+      --diceSize: 58px;
+      --tileH: 58px;
+      --tileW: 100%;
+      --thick: 10px;
+      --radius: 16px;
+    }
+
+    body{ margin:0; background:var(--bg); color:var(--fg); }
+    .app{ max-width: 600px; margin:0 auto; padding:16px; }
+    h1{ font-size: 20px; margin: 8px 0 12px; font-weight: 900; }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--cardLine);
+      border-radius: 18px;
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .between{ justify-content: space-between; }
+    .space{ height: 12px; }
+
+    .pill{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      font-size: 12px;
+      white-space: nowrap;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .pill.active{
+      background: var(--accentSoft);
+      border-color: var(--accentLine);
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(255,255,255,0.25);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+    }
+    .pill.active .dot{ background: var(--accent); box-shadow:none; }
+
+    .sum{ font-size: 14px; opacity:.93; }
+    .big{ font-size: 16px; font-weight: 900; }
+
+    button{
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      border: 1px solid rgba(255,255,255,0.20);
+      background: rgba(255,255,255,0.10);
+      color: var(--fg);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 900;
+      font-size: 14px;
+    }
+    button.primary{
+      background: var(--accentSoft);
+      border-color: var(--accentLine);
+    }
+    button.danger{
+      background: rgba(255, 120, 120, 0.18);
+      border-color: rgba(255, 120, 120, 0.35);
+    }
+    button:disabled{ opacity:.45; }
+
+    .msg{ font-size:13px; line-height:1.35; opacity:.94; }
+    .scorebox{
+      display:flex; gap:12px; flex-wrap:wrap;
+      align-items:center;
+      font-size:13px;
+      opacity:.95;
+    }
+    .scoreline b{ font-weight: 900; }
+
+    /* ===== DADOS 3D ===== */
+    .diceWrap{
+      display:flex; gap:12px; align-items:center;
+      perspective: 700px;
+    }
+    .die3d{
+      width: var(--diceSize);
+      height: var(--diceSize);
+      position: relative;
+      perspective: 700px;
+    }
+    .cube{
+      width: 100%;
+      height: 100%;
+      position:absolute;
+      transform-style: preserve-3d;
+      transform: rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+      transition: transform 650ms cubic-bezier(.2,.9,.2,1);
+    }
+    .cube.rolling{
+      animation: spin 650ms linear infinite;
+      transition: none;
+    }
+    @keyframes spin{
+      0% { transform: rotateX(0deg) rotateY(0deg); }
+      100% { transform: rotateX(360deg) rotateY(360deg); }
+    }
+    .face{
+      position:absolute;
+      inset:0;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: inset 0 10px 22px rgba(255,255,255,0.08), inset 0 -12px 22px rgba(0,0,0,0.25);
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 10px;
+      gap: 6px;
+    }
+    .pip{
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.0);
+      justify-self:center; align-self:center;
+    }
+    .pip.on{
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(0,0,0,0.25);
+    }
+
+    /* posiciones de caras (Z = mitad del tamaño) */
+    .z{ transform: translateZ(calc(var(--diceSize)/2)); }
+    .nz{ transform: rotateY(180deg) translateZ(calc(var(--diceSize)/2)); }
+    .x{ transform: rotateY(90deg) translateZ(calc(var(--diceSize)/2)); }
+    .nx{ transform: rotateY(-90deg) translateZ(calc(var(--diceSize)/2)); }
+    .y{ transform: rotateX(90deg) translateZ(calc(var(--diceSize)/2)); }
+    .ny{ transform: rotateX(-90deg) translateZ(calc(var(--diceSize)/2)); }
+
+    /* ===== FICHAS 3D ===== */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+      perspective: 900px;
+    }
+    .tile3d{
+      height: var(--tileH);
+      width: var(--tileW);
+      position: relative;
+      transform-style: preserve-3d;
+      user-select:none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      border-radius: var(--radius);
+      transform: translateZ(0);
+      transition: transform 90ms ease;
+    }
+    .tile3d:active{ transform: translateY(1px); }
+
+    .tileTop{
+      position:absolute; inset:0;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+      border: 1px solid var(--tileLine);
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 900;
+      font-size: 18px;
+      transform: translateZ(var(--thick));
+      box-shadow: inset 0 8px 18px rgba(255,255,255,0.06), inset 0 -10px 18px rgba(0,0,0,0.28);
+    }
+
+    .tileSide{
+      position:absolute; inset:0;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(0,0,0,0.20), rgba(255,255,255,0.04));
+      transform: translateZ(0);
+      filter: brightness(.9);
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    /* selección (jugador activo) */
+    .tile3d.selected .tileTop{
+      border-color: var(--accentLine);
+      box-shadow:
+        0 0 0 2px var(--accentLine),
+        inset 0 8px 18px rgba(255,255,255,0.06),
+        inset 0 -10px 18px rgba(0,0,0,0.28);
+      background: linear-gradient(180deg,
+        color-mix(in oklab, var(--accent) 22%, rgba(255,255,255,0.10)),
+        rgba(255,255,255,0.06)
+      );
+    }
+
+    /* cerrar: flip hacia abajo */
+    .tile3d.closing{
+      animation: tileFall 340ms ease-out forwards;
+      transform-origin: center bottom;
+    }
+    @keyframes tileFall{
+      0% { transform: rotateX(0deg) translateY(0); }
+      60%{ transform: rotateX(70deg) translateY(3px); }
+      100%{ transform: rotateX(85deg) translateY(10px); }
+    }
+
+    /* cerrada: queda “tumbada” y tintada con color del jugador */
+    .tile3d.closed{
+      pointer-events:none;
+      transform: rotateX(85deg) translateY(10px);
+      opacity: .55;
+    }
+    .tile3d.closed .tileTop{
+      background: linear-gradient(180deg,
+        color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10)),
+        rgba(255,255,255,0.05)
+      );
+      border-color: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.14));
+    }
+
+    /* indicador jugador actual (clase aplicada al body) */
+    body.p1 { --accent: var(--p1); }
+    body.p2 { --accent: var(--p2); }
+
+    .footer{ font-size:12px; opacity:.72; margin-top:10px; }
+  </style>
+</head>
+
+<body class="p1">
+  <div class="app">
+    <h1>Shut the Box 3D (1–10) · 2 jugadores · Mejor de 3</h1>
+
+    <div class="card">
+      <div class="row between">
+        <div class="row" style="gap:8px;">
+          <div class="pill active" id="p1Pill"><span class="dot"></span>Jugador 1 (rojo)</div>
+          <div class="pill" id="p2Pill"><span class="dot"></span>Jugador 2 (azul)</div>
+          <div class="pill" id="modePill">Modo: 2 dados</div>
+        </div>
+
+        <div class="diceWrap" aria-label="dados">
+          <div class="die3d" id="dieA"></div>
+          <div class="die3d" id="dieB"></div>
+        </div>
+      </div>
+
+      <div class="space"></div>
+
+      <div class="row between">
+        <div class="sum">
+          Tirada: <span class="big" id="rollSum">–</span><br/>
+          Selección: <span class="big" id="selSum">0</span>
+        </div>
+
+        <div class="row">
+          <button id="rollBtn" class="primary">Tirar</button>
+          <button id="confirmBtn" disabled>Confirmar</button>
+          <button id="clearBtn">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="space"></div>
+
+      <div class="grid" id="board" aria-label="tablero"></div>
+
+      <div class="space"></div>
+
+      <div class="row between">
+        <div class="msg" id="statusMsg"></div>
+        <div class="row">
+          <button id="roundBtn">Nueva ronda</button>
+          <button id="newBtn" class="danger">Nueva partida</button>
+        </div>
+      </div>
+
+      <div class="space"></div>
+
+      <div class="scorebox">
+        <div class="scoreline">Ronda P1: <b id="p1RoundScore">–</b></div>
+        <div class="scoreline">Ronda P2: <b id="p2RoundScore">–</b></div>
+        <div class="scoreline">Ganador ronda: <b id="roundWinner">–</b></div>
+      </div>
+
+      <div class="space"></div>
+
+      <div class="scorebox">
+        <div class="scoreline">Victorias (Bo3) · P1: <b id="p1Wins">0</b></div>
+        <div class="scoreline">P2: <b id="p2Wins">0</b></div>
+        <div class="scoreline">Partida: <b id="matchWinner">–</b></div>
+      </div>
+
+      <div class="footer">
+        Regla: si la suma de fichas abiertas ≤ 6 ⇒ 1 dado; si no ⇒ 2 dados (automático).
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const N = 10;
+  const WINS_TO_TAKE_MATCH = 2; // mejor de 3
+
+  const boardEl = document.getElementById('board');
+  const rollSumEl = document.getElementById('rollSum');
+  const selSumEl = document.getElementById('selSum');
+  const statusMsgEl = document.getElementById('statusMsg');
+  const modePillEl = document.getElementById('modePill');
+
+  const p1Pill = document.getElementById('p1Pill');
+  const p2Pill = document.getElementById('p2Pill');
+
+  const rollBtn = document.getElementById('rollBtn');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const roundBtn = document.getElementById('roundBtn');
+  const newBtn = document.getElementById('newBtn');
+
+  const p1RoundScoreEl = document.getElementById('p1RoundScore');
+  const p2RoundScoreEl = document.getElementById('p2RoundScore');
+  const roundWinnerEl = document.getElementById('roundWinner');
+
+  const p1WinsEl = document.getElementById('p1Wins');
+  const p2WinsEl = document.getElementById('p2Wins');
+  const matchWinnerEl = document.getElementById('matchWinner');
+
+  /* ====== DADO 3D ====== */
+  function makeDie(el){
+    el.innerHTML = `
+      <div class="cube" style="--rx:0deg;--ry:0deg">
+        <div class="face z"></div>
+        <div class="face nz"></div>
+        <div class="face x"></div>
+        <div class="face nx"></div>
+        <div class="face y"></div>
+        <div class="face ny"></div>
+      </div>
+    `;
+    const cube = el.querySelector('.cube');
+    const faces = cube.querySelectorAll('.face');
+    // crear 9 pips por cara (3x3)
+    faces.forEach(face=>{
+      face.innerHTML = '';
+      for(let i=0;i<9;i++){
+        const p = document.createElement('div');
+        p.className = 'pip';
+        face.appendChild(p);
+      }
+    });
+    // patrón de pips por valor (índices 0..8)
+    const patterns = {
+      1:[4],
+      2:[0,8],
+      3:[0,4,8],
+      4:[0,2,6,8],
+      5:[0,2,4,6,8],
+      6:[0,2,3,5,6,8]
+    };
+    // asignar cada cara a un valor fijo (estándar)
+    // front=1, top=2, right=3, left=4, bottom=5, back=6
+    const faceValues = [1,6,3,4,5,2]; // z, nz, x, nx, y, ny
+    faces.forEach((face, idx)=>{
+      const val = faceValues[idx];
+      const on = patterns[val];
+      const pips = face.querySelectorAll('.pip');
+      on.forEach(i => pips[i].classList.add('on'));
+    });
+    return { el, cube };
+  }
+
+  const dieA = makeDie(document.getElementById('dieA'));
+  const dieB = makeDie(document.getElementById('dieB'));
+
+  // rotaciones para que el valor quede “al frente”
+  // 1: frente, 2: arriba->frente (X 90), 3: derecha->frente (Y -90), 4: izquierda->frente (Y 90), 5: abajo->frente (X -90), 6: atrás->frente (Y 180)
+  const rotForValue = {
+    1: { rx: 0,   ry: 0   },
+    2: { rx: 90,  ry: 0   },
+    3: { rx: 0,   ry: -90 },
+    4: { rx: 0,   ry: 90  },
+    5: { rx: -90, ry: 0   },
+    6: { rx: 0,   ry: 180 }
+  };
+
+  function setDieValue(dieObj, value){
+    const r = rotForValue[value];
+    dieObj.cube.style.setProperty('--rx', `${r.rx}deg`);
+    dieObj.cube.style.setProperty('--ry', `${r.ry}deg`);
+    dieObj.cube.style.transform = `rotateX(${r.rx}deg) rotateY(${r.ry}deg)`;
+  }
+
+  function setDiceIdle(diceCount){
+    // si es 1 dado, “aparcamos” el segundo
+    if(diceCount === 1){
+      dieB.el.style.opacity = '0.35';
+      dieB.el.style.filter = 'grayscale(1)';
+    }else{
+      dieB.el.style.opacity = '1';
+      dieB.el.style.filter = 'none';
+    }
+  }
+
+  /* ====== GAME STATE ====== */
+  function freshTurnState(){
+    return {
+      closed: new Set(),
+      selected: new Set(),
+      currentRoll: null,
+      diceCount: 2,
+      ended: false,
+      score: null,
+      shut: false
+    };
+  }
+
+  let turn = 1;
+  let states = { 1: freshTurnState(), 2: freshTurnState() };
+  let wins = { 1: 0, 2: 0 };
+  let roundOver = false;
+  let matchOver = false;
+  let rolling = false;
+
+  function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
+  function openTiles(st){
+    const arr=[];
+    for(let i=1;i<=N;i++) if(!st.closed.has(i)) arr.push(i);
+    return arr;
+  }
+
+  function setActivePlayerUI(){
+    document.body.classList.toggle('p1', turn === 1);
+    document.body.classList.toggle('p2', turn === 2);
+
+    if(turn === 1){
+      p1Pill.classList.add('active'); p2Pill.classList.remove('active');
+    }else{
+      p2Pill.classList.add('active'); p1Pill.classList.remove('active');
+    }
+  }
+
+  function updateDiceMode(st){
+    const openSum = sum(openTiles(st));
+    st.diceCount = (openSum <= 6) ? 1 : 2;
+    modePillEl.textContent = `Modo: ${st.diceCount} dado${st.diceCount===1?'':'s'}`;
+    setDiceIdle(st.diceCount);
+  }
+
+  function renderBoard(st){
+    boardEl.innerHTML = '';
+    for(let i=1;i<=N;i++){
+      const t = document.createElement('div');
+      t.className = 'tile3d' +
+        (st.selected.has(i) ? ' selected' : '') +
+        (st.closed.has(i) ? ' closed' : '');
+      t.dataset.value = String(i);
+      t.innerHTML = `<div class="tileSide"></div><div class="tileTop">${i}</div>`;
+
+      if(!st.closed.has(i) && !roundOver && !st.ended && !matchOver){
+        t.addEventListener('click', ()=>toggleSelect(i));
+      }
+      boardEl.appendChild(t);
+    }
+  }
+
+  function updateSelectionUI(st){
+    const sel = [...st.selected].sort((a,b)=>a-b);
+    const s = sum(sel);
+    selSumEl.textContent = String(s);
+
+    const canConfirm = (
+      st.currentRoll !== null &&
+      s === st.currentRoll &&
+      sel.length > 0 &&
+      !st.ended && !roundOver && !matchOver
+    );
+    confirmBtn.disabled = !canConfirm;
+
+    updateStatus(st);
+    renderBoard(st);
+  }
+
+  function toggleSelect(i){
+    const st = states[turn];
+    if(st.ended || roundOver || matchOver) return;
+    if(st.closed.has(i)) return;
+
+    if(st.selected.has(i)) st.selected.delete(i);
+    else st.selected.add(i);
+
+    updateSelectionUI(st);
+  }
+
+  function hasAnyMove(target, arr){
+    const nums = arr.slice().sort((a,b)=>b-a);
+    function dfs(idx, acc){
+      if(acc === target) return true;
+      if(acc > target) return false;
+      if(idx >= nums.length) return false;
+      if(dfs(idx+1, acc + nums[idx])) return true;
+      return dfs(idx+1, acc);
+    }
+    return dfs(0,0);
+  }
+
+  function rollOnce(){ return 1 + Math.floor(Math.random()*6); }
+
+  function rollDice(){
+    const st = states[turn];
+    if(roundOver || st.ended || matchOver) return;
+    if(rolling) return;
+    if(st.currentRoll !== null) return;
+
+    updateDiceMode(st);
+
+    rolling = true;
+    dieA.cube.classList.add('rolling');
+    dieB.cube.classList.add('rolling');
+
+    const duration = 850;
+    const start = performance.now();
+
+    const tick = (now) => {
+      // durante el rodado, ponemos valores aleatorios (solo visual)
+      setDieValue(dieA, rollOnce());
+      setDieValue(dieB, rollOnce());
+
+      if(now - start < duration){
+        requestAnimationFrame(tick);
+      }else{
+        dieA.cube.classList.remove('rolling');
+        dieB.cube.classList.remove('rolling');
+        rolling = false;
+
+        const d1 = rollOnce();
+        const d2 = rollOnce();
+        setDieValue(dieA, d1);
+        if(st.diceCount === 2) setDieValue(dieB, d2);
+
+        st.currentRoll = d1 + (st.diceCount === 2 ? d2 : 0);
+        rollSumEl.textContent = String(st.currentRoll);
+
+        st.selected.clear();
+        updateSelectionUI(st);
+
+        if(!hasAnyMove(st.currentRoll, openTiles(st))){
+          endTurn(st, `⛔ No hay jugadas posibles para ${st.currentRoll}.`);
+        }
+      }
+    };
+
+    requestAnimationFrame(tick);
+  }
+
+  function animateCloseTiles(values){
+    const tiles = Array.from(boardEl.children);
+    for(const v of values){
+      const idx = v - 1;
+      const el = tiles[idx];
+      if(el) el.classList.add('closing');
+    }
+  }
+
+  function confirmMove(){
+    const st = states[turn];
+    if(roundOver || st.ended || matchOver) return;
+    if(st.currentRoll === null) return;
+
+    const sel = [...st.selected];
+    const s = sum(sel);
+    if(s !== st.currentRoll) return;
+
+    animateCloseTiles(sel);
+
+    setTimeout(()=>{
+      sel.forEach(v => st.closed.add(v));
+      st.selected.clear();
+
+      if(st.closed.size === N){
+        st.shut = true;
+        endRound(`${turn === 1 ? 'Jugador 1' : 'Jugador 2'} ha hecho ✅ SHUT THE BOX.`);
+        return;
+      }
+
+      st.currentRoll = null;
+      rollSumEl.textContent = '–';
+      updateSelectionUI(st);
+      statusMsgEl.textContent = 'Movimiento confirmado. Tira de nuevo.';
+    }, 260);
+  }
+
+  function clearSelection(){
+    const st = states[turn];
+    if(roundOver || st.ended || matchOver) return;
+    st.selected.clear();
+    updateSelectionUI(st);
+  }
+
+  function updateStatus(st){
+    if(roundOver || matchOver) return;
+
+    const open = openTiles(st);
+    const openSum = sum(open);
+    const sel = [...st.selected];
+    const selS = sum(sel);
+
+    if(st.ended){
+      statusMsgEl.textContent = `Turno finalizado. Puntuación: ${st.score}.`;
+      return;
+    }
+
+    if(st.currentRoll === null){
+      statusMsgEl.textContent = `Fichas abiertas: ${open.join(', ')} (suma ${openSum}).`;
+      return;
+    }
+
+    const diff = st.currentRoll - selS;
+    if(diff === 0 && sel.length > 0) statusMsgEl.textContent = '✅ Suma exacta. Pulsa "Confirmar".';
+    else if(diff > 0) statusMsgEl.textContent = `Selecciona fichas que sumen ${st.currentRoll} (te faltan ${diff}).`;
+    else statusMsgEl.textContent = `Te has pasado por ${Math.abs(diff)}. Ajusta la selección.`;
+  }
+
+  function endTurn(st, prefixMsg){
+    st.ended = true;
+    st.currentRoll = null;
+    st.selected.clear();
+    rollSumEl.textContent = '–';
+    selSumEl.textContent = '0';
+
+    st.score = sum(openTiles(st));
+    if(turn === 1) p1RoundScoreEl.textContent = st.score;
+    else p2RoundScoreEl.textContent = st.score;
+
+    statusMsgEl.textContent = `${prefixMsg} Fin del turno del Jugador ${turn}. Puntuación: ${st.score}.`;
+
+    if(turn === 1){
+      turn = 2;
+      setActivePlayerUI();
+      loadTurn();
+    }else{
+      endRound('Ronda completada.');
+    }
+  }
+
+  function computeRoundWinner(){
+    if(states[1].shut && !states[2].shut) return 1;
+    if(states[2].shut && !states[1].shut) return 2;
+
+    const sc1 = states[1].score ?? sum(openTiles(states[1]));
+    const sc2 = states[2].score ?? sum(openTiles(states[2]));
+    states[1].score = sc1; states[2].score = sc2;
+
+    p1RoundScoreEl.textContent = sc1;
+    p2RoundScoreEl.textContent = sc2;
+
+    if(sc1 < sc2) return 1;
+    if(sc2 < sc1) return 2;
+    return 0;
+  }
+
+  function endRound(msg){
+    roundOver = true;
+    confirmBtn.disabled = true;
+    rollBtn.disabled = true;
+    clearBtn.disabled = true;
+
+    const rw = computeRoundWinner();
+    if(rw === 1){
+      wins[1] += 1;
+      roundWinnerEl.textContent = 'Jugador 1';
+    }else if(rw === 2){
+      wins[2] += 1;
+      roundWinnerEl.textContent = 'Jugador 2';
+    }else{
+      roundWinnerEl.textContent = 'Empate';
+    }
+
+    p1WinsEl.textContent = wins[1];
+    p2WinsEl.textContent = wins[2];
+
+    if(wins[1] >= WINS_TO_TAKE_MATCH){
+      matchOver = true;
+      matchWinnerEl.textContent = 'Gana Jugador 1 (Bo3)';
+      statusMsgEl.textContent = `${msg} ✅ ${matchWinnerEl.textContent}.`;
+      roundBtn.disabled = true;
+      return;
+    }
+    if(wins[2] >= WINS_TO_TAKE_MATCH){
+      matchOver = true;
+      matchWinnerEl.textContent = 'Gana Jugador 2 (Bo3)';
+      statusMsgEl.textContent = `${msg} ✅ ${matchWinnerEl.textContent}.`;
+      roundBtn.disabled = true;
+      return;
+    }
+
+    matchWinnerEl.textContent = 'En curso';
+    statusMsgEl.textContent = `${msg} Ganador de ronda: ${roundWinnerEl.textContent}. Pulsa "Nueva ronda".`;
+    roundBtn.disabled = false;
+  }
+
+  function loadTurn(){
+    const st = states[turn];
+    setActivePlayerUI();
+    updateDiceMode(st);
+
+    st.currentRoll = null;
+    st.selected.clear();
+    rollSumEl.textContent = '–';
+    selSumEl.textContent = '0';
+
+    rollBtn.disabled = roundOver || st.ended || matchOver;
+    clearBtn.disabled = roundOver || st.ended || matchOver;
+    confirmBtn.disabled = true;
+
+    renderBoard(st);
+    updateStatus(st);
+  }
+
+  function newRound(){
+    if(matchOver) return;
+    states = { 1: freshTurnState(), 2: freshTurnState() };
+    turn = 1;
+    roundOver = false;
+
+    roundWinnerEl.textContent = '–';
+    p1RoundScoreEl.textContent = '–';
+    p2RoundScoreEl.textContent = '–';
+
+    rollBtn.disabled = false;
+    clearBtn.disabled = false;
+    confirmBtn.disabled = true;
+
+    statusMsgEl.textContent = 'Nueva ronda. Empieza Jugador 1.';
+    loadTurn();
+  }
+
+  function newMatch(){
+    wins = { 1: 0, 2: 0 };
+    p1WinsEl.textContent = '0';
+    p2WinsEl.textContent = '0';
+    matchWinnerEl.textContent = '–';
+    roundBtn.disabled = false;
+    matchOver = false;
+    newRound();
+  }
+
+  rollBtn.addEventListener('click', rollDice);
+  confirmBtn.addEventListener('click', confirmMove);
+  clearBtn.addEventListener('click', clearSelection);
+  roundBtn.addEventListener('click', newRound);
+  newBtn.addEventListener('click', newMatch);
+
+  // init
+  setDieValue(dieA, 1);
+  setDieValue(dieB, 6);
+  newMatch();
+})();
+</script>
+</body>
+</html>
