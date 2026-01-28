@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shut the Box 3D Bo3 (1–10) · v1.5</title>
+  <title>Shut the Box 3D Bo3 (1–10) · v1.7</title>
+
   <style>
     :root{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -15,8 +16,8 @@
 
       --accent: var(--p1);
       --accentSoft: color-mix(in oklab, var(--accent) 18%, rgba(255,255,255,0.04));
-      --accentSoft2: color-mix(in oklab, var(--accent) 30%, rgba(255,255,255,0.06));
-      --accentLine: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10));
+      --accentSoft2: color-mix(in oklab, var(--accent) 32%, rgba(255,255,255,0.06));
+      --accentLine: color-mix(in oklab, var(--accent) 58%, rgba(255,255,255,0.10));
 
       --card: rgba(255,255,255,0.06);
       --cardLine: rgba(255,255,255,0.12);
@@ -24,10 +25,10 @@
 
       --diceSize: 58px;
 
-      /* Fichas tipo dominó: VERTICALES */
-      --tileW: 64px;   /* más estrecha */
-      --tileH: 108px;  /* más alta */
-      --thick: 18px;   /* más grosor */
+      /* FICHAS: prisma 3D vertical */
+      --tileW: 66px;     /* ancho */
+      --tileH: 118px;    /* alto (vertical) */
+      --tileD: 24px;     /* profundidad (espesor REAL) */
       --radius: 16px;
     }
 
@@ -171,12 +172,12 @@
     .y  { transform: rotateX(90deg) translateZ(calc(var(--diceSize)/2)); }
     .ny { transform: rotateX(-90deg) translateZ(calc(var(--diceSize)/2)); }
 
-    /* ===== FICHAS 3D VERTICALES ===== */
+    /* ===== TABLERO ===== */
     .grid{
       display:grid;
       gap: 12px;
       margin-top: 10px;
-      perspective: 1000px;
+      perspective: 1200px;
       grid-template-columns: repeat(4, var(--tileW));
       justify-content: center;
     }
@@ -187,6 +188,7 @@
       .grid{ grid-template-columns: repeat(10, var(--tileW)); }
     }
 
+    /* ===== FICHA PRISMA 3D (6 CARAS) ===== */
     .tile3d{
       width: var(--tileW);
       height: var(--tileH);
@@ -195,114 +197,147 @@
       user-select:none;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      border-radius: var(--radius);
-      transition: transform 120ms ease, filter 120ms ease;
-      filter: drop-shadow(0 14px 20px rgba(0,0,0,0.42));
+      transition: transform 140ms ease, filter 140ms ease, opacity 140ms ease;
+      filter: drop-shadow(0 18px 26px rgba(0,0,0,0.50));
     }
     .tile3d:active{ transform: translateY(1px); }
 
-    /* “cuerpo” base */
-    .tileBody{
-      position:absolute; inset:0;
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(0,0,0,0.28), rgba(255,255,255,0.04));
-      border: 1px solid rgba(255,255,255,0.10);
-      transform: translateZ(0);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.08),
-        inset 0 -1px 0 rgba(0,0,0,0.30);
-      filter: brightness(.92);
+    .prism{
+      position:absolute;
+      inset:0;
+      transform-style: preserve-3d;
+
+      /* Vista 3D constante */
+      transform: rotateX(12deg) rotateY(-18deg);
+      transition: transform 220ms ease;
+    }
+    .tile3d.selected .prism{
+      transform: rotateX(12deg) rotateY(-18deg) translateZ(2px);
     }
 
-    /* cara superior */
-    .tileTop{
-      position:absolute; inset:0;
+    .pface{
+      position:absolute;
       border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,0.14);
+      backface-visibility: hidden;
+    }
+
+    /* Dimensiones útiles */
+    /* half-depth */
+    .front { inset:0; transform: translateZ(calc(var(--tileD)/2)); }
+    .back  { inset:0; transform: rotateY(180deg) translateZ(calc(var(--tileD)/2)); }
+
+    .left{
+      top:0; bottom:0;
+      width: var(--tileD);
+      left: calc((var(--tileD) / -2));
+      transform: rotateY(-90deg) translateZ(calc(var(--tileW)/2));
+      border-radius: 14px;
+    }
+    .right{
+      top:0; bottom:0;
+      width: var(--tileD);
+      right: calc((var(--tileD) / -2));
+      transform: rotateY(90deg) translateZ(calc(var(--tileW)/2));
+      border-radius: 14px;
+    }
+    .top{
+      left:0; right:0;
+      height: var(--tileD);
+      top: calc((var(--tileD) / -2));
+      transform: rotateX(90deg) translateZ(calc(var(--tileH)/2));
+      border-radius: 14px;
+    }
+    .bottom{
+      left:0; right:0;
+      height: var(--tileD);
+      bottom: calc((var(--tileD) / -2));
+      transform: rotateX(-90deg) translateZ(calc(var(--tileH)/2));
+      border-radius: 14px;
+    }
+
+    /* Material (front) */
+    .front{
       background: linear-gradient(180deg, var(--accentSoft2), rgba(255,255,255,0.06));
-      border: 1px solid var(--accentLine);
+      border-color: var(--accentLine);
+      box-shadow:
+        inset 0 14px 26px rgba(255,255,255,0.08),
+        inset 0 -18px 26px rgba(0,0,0,0.38);
+      overflow:hidden;
       display:flex; align-items:center; justify-content:center;
       font-weight: 950;
-      font-size: 24px;
-      letter-spacing: 0.2px;
-      transform: translateZ(var(--thick));
-      box-shadow:
-        inset 0 12px 22px rgba(255,255,255,0.07),
-        inset 0 -16px 22px rgba(0,0,0,0.34);
-      position: relative;
-      overflow: hidden;
+      font-size: 26px;
+      letter-spacing: .2px;
     }
-
-    /* brillo diagonal estilo “resina” */
-    .tileTop::before{
+    .front::before{
       content:"";
       position:absolute;
-      inset:-30%;
-      background: linear-gradient(120deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02), rgba(255,255,255,0));
-      transform: translateX(-35%) rotate(8deg);
+      inset:-45%;
+      background: linear-gradient(120deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04), rgba(255,255,255,0));
+      transform: translateX(-28%) rotate(10deg);
       opacity: .55;
       pointer-events:none;
     }
-
-    /* LATERALES: más 3D realista (izq y der) */
-    .tileSideL, .tileSideR{
+    .bevel{
       position:absolute;
-      top: 6px;
-      bottom: 6px;
-      width: calc(var(--thick));
-      border-radius: 12px;
-      transform-origin: center;
-      background: linear-gradient(180deg,
-        color-mix(in oklab, var(--accent) 20%, rgba(0,0,0,0.60)),
-        rgba(0,0,0,0.55)
-      );
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+      inset: 3px;
+      border-radius: calc(var(--radius) - 4px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.20),
+        inset 0 -1px 0 rgba(0,0,0,0.34);
       pointer-events:none;
     }
-    .tileSideL{
-      left: 6px;
-      transform: rotateY(90deg) translateZ(calc(var(--tileW)/2 - 1px));
-      filter: brightness(.85);
+
+    /* Material (sides) */
+    .back{
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
     }
-    .tileSideR{
-      right: 6px;
-      transform: rotateY(-90deg) translateZ(calc(var(--tileW)/2 - 1px));
+
+    .left{
+      background: linear-gradient(180deg,
+        rgba(255,255,255,0.10),
+        rgba(0,0,0,0.62)
+      );
+      filter: brightness(.92);
+    }
+    .right{
+      background: linear-gradient(180deg,
+        rgba(255,255,255,0.07),
+        rgba(0,0,0,0.70)
+      );
       filter: brightness(.78);
     }
-
-    /* “frontal” de espesor (parte de abajo) */
-    .tileFront{
-      position:absolute;
-      left: 6px; right: 6px;
-      bottom: calc(-1 * var(--thick));
-      height: var(--thick);
-      border-radius: 0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);
-      background: linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--accent) 40%, rgba(255,255,255,0.10)),
-        rgba(0,0,0,0.50)
+    .top{
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.09),
+        rgba(0,0,0,0.62)
       );
-      border-left: 1px solid rgba(255,255,255,0.12);
-      border-right: 1px solid rgba(255,255,255,0.12);
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 14px 20px rgba(0,0,0,0.45);
-      transform: translateZ(calc(var(--thick) - 1px));
-      pointer-events:none;
+      filter: brightness(.90);
+    }
+    .bottom{
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.05),
+        rgba(0,0,0,0.76)
+      );
+      filter: brightness(.70);
     }
 
-    .tile3d.selected .tileTop{
+    .tile3d.selected .front{
       box-shadow:
-        0 0 0 3px color-mix(in oklab, var(--accent) 65%, transparent),
-        inset 0 12px 22px rgba(255,255,255,0.07),
-        inset 0 -16px 22px rgba(0,0,0,0.34);
+        0 0 0 3px color-mix(in oklab, var(--accent) 70%, transparent),
+        inset 0 14px 26px rgba(255,255,255,0.08),
+        inset 0 -18px 26px rgba(0,0,0,0.38);
       background: linear-gradient(180deg,
-        color-mix(in oklab, var(--accent) 52%, rgba(255,255,255,0.10)),
+        color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10)),
         rgba(255,255,255,0.06)
       );
     }
 
+    /* Animación tumbar */
     .tile3d.closing{
-      animation: tileFall 360ms ease-out forwards;
+      animation: tileFall 380ms ease-out forwards;
       transform-origin: center bottom;
     }
     @keyframes tileFall{
@@ -316,6 +351,13 @@
       transform: rotateX(85deg) translateY(10px);
       opacity: .55;
     }
+    .tile3d.closed .front{
+      background: linear-gradient(180deg,
+        color-mix(in oklab, var(--accent) 40%, rgba(255,255,255,0.08)),
+        rgba(255,255,255,0.05)
+      );
+      border-color: color-mix(in oklab, var(--accent) 55%, rgba(255,255,255,0.10));
+    }
 
     body.p1 { --accent: var(--p1); }
     body.p2 { --accent: var(--p2); }
@@ -326,7 +368,7 @@
 
 <body class="p1">
   <div class="app">
-    <h1>Shut the Box 3D (1–10) · 2 jugadores · Bo3 <span class="ver">v1.5</span></h1>
+    <h1>Shut the Box 3D (1–10) · 2 jugadores · Bo3 <span class="ver">v1.7</span></h1>
 
     <div class="card">
       <div class="row between">
@@ -476,7 +518,6 @@
 
     function paintFront(value){
       paint(faces.z, value);
-      // resto vacío para no “leer” valores raros desde ángulos
       [faces.nz, faces.x, faces.nx, faces.y, faces.ny].forEach(f=>{
         const pips = f.querySelectorAll('.pip');
         pips.forEach(p => p.classList.remove('on'));
@@ -548,13 +589,18 @@
     for(let i=1;i<=N;i++){
       const t = document.createElement('div');
       t.className = 'tile3d' + (st.selected.has(i) ? ' selected' : '') + (st.closed.has(i) ? ' closed' : '');
+
       t.innerHTML = `
-        <div class="tileBody"></div>
-        <div class="tileSideL"></div>
-        <div class="tileSideR"></div>
-        <div class="tileFront"></div>
-        <div class="tileTop">${i}</div>
+        <div class="prism">
+          <div class="pface front">${i}<div class="bevel"></div></div>
+          <div class="pface back"></div>
+          <div class="pface left"></div>
+          <div class="pface right"></div>
+          <div class="pface top"></div>
+          <div class="pface bottom"></div>
+        </div>
       `;
+
       if(!st.closed.has(i) && !roundOver && !st.ended && !matchOver){
         t.addEventListener('click', ()=>toggleSelect(i));
       }
@@ -565,7 +611,12 @@
   function updateSelectionUI(st){
     const sel = [...st.selected].sort((a,b)=>a-b);
     selSumEl.textContent = String(sum(sel));
-    const canConfirm = (st.currentRoll !== null && sum(sel) === st.currentRoll && sel.length > 0 && !st.ended && !roundOver && !matchOver);
+    const canConfirm = (
+      st.currentRoll !== null &&
+      sum(sel) === st.currentRoll &&
+      sel.length > 0 &&
+      !st.ended && !roundOver && !matchOver
+    );
     confirmBtn.disabled = !canConfirm;
 
     updateStatus(st);
